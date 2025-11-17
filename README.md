@@ -1,31 +1,100 @@
-# RAG-Based AI Tutor with Inline Images
+# 🧠 RAG-Powered AI Tutor with Intelligent Diagram Retrieval
 
-## Project Overview
+A sophisticated, fully local AI tutoring system that combines Retrieval-Augmented Generation (RAG) with intelligent image retrieval to provide contextual learning experiences with relevant visual aids.
 
-This project demonstrates a small, fully local Retrieval-Augmented Generation (RAG) tutor capable of ingesting a chapter PDF, answering follow-up questions, and dynamically surfacing the most relevant diagram in-line with every answer. It's designed to provide a rich, contextually aware learning experience by combining textual answers with visual aids directly extracted from the study material.
+## 🎯 Project Objective
 
-The tutor operates without requiring external LLM API keys, leveraging local TF-IDF embeddings and FAISS for efficient information retrieval and a lightweight, grounded answering mechanism.
+This project addresses the challenge of creating an intelligent tutoring system that can:
+- Process educational materials (PDFs) and answer questions based **exclusively** on the provided content
+- **Automatically identify and display** the most relevant diagrams/images that support the textual answers
+- Operate **completely locally** without relying on external API services
+- Provide **citations and source verification** to build trust in the responses
 
-## Architecture Overview
+## 🏗️ System Architecture
 
-The system is composed of a FastAPI backend service and a Vite + React frontend single-page application, along with a static file server for serving diagrams.
+The system is built with a modern decoupled architecture featuring a React frontend and FastAPI backend, designed for efficient document processing and intelligent retrieval.
 
-http://googleusercontent.com/image_generation_content/1
+![Architecture Overview](Gemini_Generated_Image_lixli6lixli6lixl.png)
 
+### Architecture Components
 
+#### Frontend (Vite + React SPA)
+- **User Interface**: Clean, responsive chat-based interface
+- **PDF Upload Component**: Drag-and-drop file upload with progress tracking
+- **Chat Interface**: Real-time Q&A with message history
+- **Image Rendering**: Dynamic display of relevant diagrams alongside answers
 
-**Key Components:**
+#### Backend (FastAPI Service)
+- **PDF Ingestion & Chunking**: Uses PyPDF2 for text extraction and intelligent chunking
+- **TF-IDF Embeddings**: Lightweight semantic embeddings using scikit-learn
+- **Vector Store**: FAISS FlatL2 index for high-performance similarity search
+- **Image Retrieval Logic**: Separate TF-IDF namespace for diagram matching
+- **Grounded Answering**: LLMService for context-aware response generation
+- **API Response**: Structured JSON responses with answers and image references
 
-* **Frontend (Vite + React SPA):** Handles user interaction, PDF uploads, displays chat conversations, and renders inline images.
-* **Backend (FastAPI Service):** The core logic, including PDF ingestion, text chunking, TF-IDF embedding generation, FAISS vector storage, retrieval for both text and images, and grounded answer generation.
-* **Static File Server (`backend/data/`):** Serves persisted PDFs, FAISS indices, metadata JSON, and the actual diagram assets referenced by the chat responses.
+#### Data Persistence Layer
+- **Static File Server**: Serves diagram images and static assets from `/backend/data/`
+- **FAISS Indices**: Persistent vector stores for fast retrieval
+- **Metadata JSON**: Document and chunk metadata storage
+- **Diagram PNGs**: Curated visual assets for educational content
 
-## Features
+### Workflow Process
 
-* **PDF Ingestion:** Upload any PDF chapter for study.
-* **Contextual Q&A:** Ask questions about the uploaded material and receive grounded answers.
-* **Inline Diagram Retrieval:** Automatically surfaces the most relevant diagram with each answer, enhancing comprehension.
-* **Fully Local:** Runs entirely on your machine without needing external API calls for LLMs.
-* **Persistent Data:** Uploaded PDFs, embeddings, and associated metadata are persisted for continued use.
+1. **Document Ingestion**: PDF → Text Extraction → Chunking → TF-IDF Embeddings → FAISS Storage
+2. **Query Processing**: User Question → Dual Retrieval (Text + Images) → Response Generation
+3. **Response Delivery**: Formatted Answer + Image Reference → Frontend Rendering
 
-## Project Layout
+## 🚀 Key Features
+
+### ✨ Core Capabilities
+- **Smart Document Processing**: Automatically extracts text and identifies diagram contexts from PDFs
+- **Dual-Modal Retrieval**: Simultaneously searches for relevant text passages AND supporting images
+- **Citation-Based Answers**: Every response includes source references from the original material
+- **Fully Local Operation**: No external dependencies or API keys required after setup
+
+### 🎯 Advanced Functionality
+- **TF-IDF Powered Embeddings**: Lightweight yet effective semantic search using scikit-learn
+- **FAISS Vector Storage**: High-performance similarity search for rapid retrieval
+- **Rule-Based Response Generation**: Ensures answers are grounded in source material
+- **Static Asset Serving**: Efficient delivery of diagram images via FastAPI static routes
+
+## 📁 Project Structure
+
+```bash
+Assignment_Edulevel/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── endpoints/          # FastAPI route handlers
+│   │   │   │   ├── chat.py        # Q&A endpoint logic
+│   │   │   │   └── upload.py      # PDF processing endpoint
+│   │   │   └── routers.py         # API route configurations
+│   │   ├── core/                  # Application configuration
+│   │   │   └── config.py          # Settings and constants
+│   │   ├── services/              # Business logic layer
+│   │   │   ├── pdf_service.py     # PDF parsing and text extraction
+│   │   │   ├── rag_service.py     # RAG pipeline implementation
+│   │   │   ├── llm_service.py     # Response generation logic
+│   │   │   └── image_service.py   # Diagram matching and retrieval
+│   │   └── main.py               # FastAPI application entry point
+│   ├── data/                     # Persistent data storage
+│   │   ├── pdfs/                 # Uploaded PDF documents
+│   │   ├── indices/              # FAISS vector indices
+│   │   ├── images/               # Extracted diagram assets
+│   │   └── metadata/             # JSON files for document tracking
+│   ├── requirements.txt          # Python dependencies
+│   └── venv/                     # Python virtual environment
+├── frontend/
+│   ├── public/                   # Static assets
+│   ├── src/
+│   │   ├── components/           # React components
+│   │   │   ├── ChatInterface.jsx # Main chat component
+│   │   │   ├── FileUpload.jsx    # PDF upload handler
+│   │   │   └── MessageBubble.jsx # Individual message display
+│   │   ├── hooks/                # Custom React hooks
+│   │   ├── services/             # API client services
+│   │   ├── utils/                # Helper functions
+│   │   └── App.jsx               # Main application component
+│   ├── package.json              # NPM dependencies and scripts
+│   └── vite.config.js           # Vite build configuration
+└── README.md                    # Project documentation
