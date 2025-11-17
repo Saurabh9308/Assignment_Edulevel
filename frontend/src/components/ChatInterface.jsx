@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Message from './Message';
+import ImageMessage from './ImageMessage';
+import apiService from '../services/apiService';
 
 const ChatInterface = ({ currentChat, onUpdateChat, onNewChat }) => {
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -13,8 +16,8 @@ const ChatInterface = ({ currentChat, onUpdateChat, onNewChat }) => {
     scrollToBottom();
   }, [currentChat?.messages]);
 
-  const handleSendMessage = () => {
-    if (message.trim() && currentChat) {
+  const handleSendMessage = async () => {
+    if (message.trim() && currentChat && !isLoading) {
       const userMessage = {
         id: Date.now(),
         text: message.trim(),
@@ -26,30 +29,42 @@ const ChatInterface = ({ currentChat, onUpdateChat, onNewChat }) => {
       const updatedMessages = [...(currentChat.messages || []), userMessage];
       onUpdateChat(currentChat.id, updatedMessages);
       setMessage('');
+      setIsLoading(true);
 
-      // Simulate AI response after 1 second
-      setTimeout(() => {
+      try {
+        const response = await apiService.sendChatMessage(currentChat.topicId, message.trim());
+        
         const aiMessage = {
           id: Date.now() + 1,
-          text: getAIResponse(message.trim()),
+          text: response.answer,
+          sender: 'ai',
+          timestamp: new Date(),
+          type: 'text',
+          image: response.image_filename ? {
+            id: response.image_id || `img_${Date.now()}`,
+            filename: response.image_filename,
+            title: response.image_title || 'Relevant Diagram',
+            url: apiService.getImageUrl(response.image_filename)
+          } : null
+        };
+
+        onUpdateChat(currentChat.id, [...updatedMessages, aiMessage]);
+      } catch (error) {
+        console.error('Error sending message:', error);
+        
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: "I'm having trouble connecting to the AI service. Please try again.",
           sender: 'ai',
           timestamp: new Date(),
           type: 'text'
         };
-        onUpdateChat(currentChat.id, [...updatedMessages, aiMessage]);
-      }, 1000);
+        
+        onUpdateChat(currentChat.id, [...updatedMessages, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  };
-
-  const getAIResponse = (userMessage) => {
-    const responses = [
-      "I've analyzed your PDF and found some interesting insights. Based on the content, I can help explain the key concepts in more detail.",
-      "That's a great question about the PDF! The document covers this topic extensively. Let me break it down for you.",
-      "I understand you're looking for clarification. The PDF provides comprehensive information on this subject. Here's what I can tell you:",
-      "Based on the PDF content, I can provide you with a detailed explanation. The document emphasizes several important points related to your question.",
-      "I've reviewed the relevant sections of your PDF. Here's a comprehensive answer to your question:"
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   const handleKeyPress = (e) => {
@@ -60,9 +75,7 @@ const ChatInterface = ({ currentChat, onUpdateChat, onNewChat }) => {
   };
 
   const handlePdfClick = (file) => {
-    // Create a blob URL for the PDF file
     const fileUrl = URL.createObjectURL(file);
-    // Open the PDF in a new tab
     window.open(fileUrl, '_blank');
   };
 
@@ -112,10 +125,30 @@ const ChatInterface = ({ currentChat, onUpdateChat, onNewChat }) => {
                 </div>
               </div>
             ) : (
-              <Message key={msg.id} message={msg} />
+              <>
+                <Message key={msg.id} message={msg} />
+                {msg.sender === 'ai' && msg.image && (
+                  <ImageMessage 
+                    image={msg.image} 
+                    timestamp={msg.timestamp}
+                  />
+                )}
+              </>
             )}
           </div>
         ))}
+        {isLoading && (
+          <div className="message ai-message">
+            <div className="message-avatar">🤖</div>
+            <div className="message-content-wrapper">
+              <div className="message-content">
+                <div className="message-text typing-indicator">
+                  AI Tutor is thinking...
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
       
@@ -128,11 +161,12 @@ const ChatInterface = ({ currentChat, onUpdateChat, onNewChat }) => {
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               rows="1"
+              disabled={isLoading}
             />
             <button 
               className="send-btn" 
               onClick={handleSendMessage}
-              disabled={!message.trim()}
+              disabled={!message.trim() || isLoading}
             >
               <span className="send-icon">➤</span>
             </button>

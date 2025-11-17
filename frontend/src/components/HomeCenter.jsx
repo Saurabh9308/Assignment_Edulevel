@@ -1,19 +1,27 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
-const HomeCenter = ({ onFileUpload }) => {
+const HomeCenter = ({ onFileUpload, isUploading }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const isPdfFile = (file) => {
+    if (!file) return false;
+    if (file.type === 'application/pdf') return true;
+    return (file.name || '').toLowerCase().endsWith('.pdf');
+  };
 
   const handleFileUpload = (file) => {
-    if (file && file.type === 'application/pdf') {
+    if (file && isPdfFile(file)) {
       onFileUpload(file);
-    } else {
-      alert('Please select a PDF file');
+    } else if (file) {
+      alert('Please select a PDF file (.pdf extension)');
     }
   };
 
   const handleFileInput = (event) => {
     const file = event.target.files[0];
     handleFileUpload(file);
+    event.target.value = '';
   };
 
   const handleDragOver = (e) => {
@@ -40,25 +48,40 @@ const HomeCenter = ({ onFileUpload }) => {
         <p>Upload your PDF document and start learning with your AI Tutor</p>
         
         <div 
-          className={`upload-area ${isDragging ? 'dragging' : ''}`}
+          className={`upload-area ${isDragging ? 'dragging' : ''} ${isUploading ? 'uploading' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           <div className="upload-content">
-            <h3>Drop your PDF here or click to browse</h3>
-            <p>Supports PDF files up to 10MB</p>
-            
-            <label htmlFor="pdf-upload" className="upload-btn">
-              Choose PDF File
-            </label>
-            <input
-              id="pdf-upload"
-              type="file"
-              accept=".pdf"
-              onChange={handleFileInput}
-              style={{ display: 'none' }}
-            />
+            {isUploading ? (
+              <>
+                <h3>Processing PDF...</h3>
+                <p>This may take a few moments</p>
+                <div className="loading-spinner"></div>
+              </>
+            ) : (
+              <>
+                <h3>Drop your PDF here or click to browse</h3>
+                <p>Supports PDF files up to 10MB</p>
+                
+                <label 
+                  htmlFor="pdf-upload" 
+                  className="upload-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Choose PDF File
+                </label>
+                <input
+                  id="pdf-upload"
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileInput}
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

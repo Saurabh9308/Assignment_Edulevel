@@ -1,16 +1,38 @@
-# React + Vite
+# RAG Tutor Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Lightweight React + Vite client for the AI tutor. The UI stays minimal on purpose:
 
-Currently, two official plugins are available:
+- Landing screen with a single drop zone / picker for PDFs (drag-and-drop supported).
+- Chat screen that looks like a messenger thread: user and AI bubbles, plus inline diagrams only when the backend returns one for that answer.
+- No extra cards, galleries, or banners—just upload, ask, and read the response.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Run Locally
+```bash
+cd /Users/sk__volley__07/Desktop/New\ Beginning/Assignment_Edulevel/frontend
+npm install
+npm run dev -- --host
+```
 
-## React Compiler
+Open the Vite URL shown in the terminal (usually `http://127.0.0.1:5173`). Make sure the FastAPI backend is already running at `http://localhost:8000`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Environment Variables (optional)
+```
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_ASSET_BASE_URL=http://localhost:8000
+```
 
-## Expanding the ESLint configuration
+## Source Overview
+```
+src/
+  components/
+    ChatInterface.jsx   # Chat layout + message list
+    HomeCenter.jsx      # Upload landing screen
+    ImageMessage.jsx    # Inline diagram bubble
+    Message.jsx         # Generic text bubble
+  services/
+    apiService.js       # Fetch helpers + image URL builder
+  App.jsx               # High-level state + routing between views
+  index.css             # Simple dark theme styling
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+All styling lives in `index.css`. Tweak the CSS variables at the top if you want a different color palette, but the layout intentionally stays straightforward so learners focus on the conversation.
