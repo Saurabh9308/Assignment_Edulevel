@@ -14,7 +14,7 @@ This project addresses the challenge of creating an intelligent tutoring system 
 
 The system is built with a modern decoupled architecture featuring a React frontend and FastAPI backend, designed for efficient document processing and intelligent retrieval.
 
-![Architecture Overview](Gemini_Generated_Image_lixli6lixli6lixl.png)
+![Architecture Overview](docs/architecture/Gemini_Generated_Image_lixli6lixli6lixl.png)
 
 ### Architecture Components
 
