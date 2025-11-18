@@ -10,21 +10,112 @@ An intelligent AI tutor chatbot that uses Retrieval Augmented Generation (RAG) t
 - **Smart Image Retrieval**: Automatically find and display relevant diagrams based on content similarity
 - **Interactive Chat Interface**: Clean, responsive UI for seamless learning experience
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
-### Frontend (React)
-- **App.jsx**: Main application component with state management
-- **HomeCenter.jsx**: PDF upload interface with drag & drop
-- **ChatInterface.jsx**: Interactive chat component
-- **Message.jsx**: Individual message rendering
-- **ImageMessage.jsx**: Image display component
-- **apiService.js**: Backend API communication layer
+### High-Level Architecture Overview
 
-### Backend (FastAPI)
-- **RAG Pipeline**: Text extraction → Chunking → Embedding → Retrieval → Generation
-- **Vector Storage**: FAISS for efficient similarity search
-- **Image Service**: TF-IDF based image retrieval system
-- **API Endpoints**: RESTful endpoints for upload, chat, and image retrieval
+```mermaid
+graph TB
+    subgraph Frontend [Frontend - Vite + React SPA]
+        A[User] --> B[PDF Upload Component]
+        A --> C[Chat Interface]
+        B --> D[PDF File]
+        C --> E[Image Rendering]
+    end
+
+    subgraph Backend [Backend - FastAPI Service]
+        F[PDF Ingestion & Chunking<br/>PyPDF2] --> G[TF-IDF Embeddings<br/>scikit-learn]
+        G --> H[Vector Store<br/>FAISS FlatL2 Index]
+        
+        I[User Question] --> J[Retrieval<br/>Top-k lookup]
+        H --> J
+        J --> K[Grounded Answering<br/>LLM Service]
+        
+        L[Diagram Metadata<br/>JSON files] --> M[Image Retrieval Logic<br/>TF-IDF Image Namespace]
+        M --> K
+        K --> N[Formatted Response<br/>Answer + Image Reference]
+    end
+
+    subgraph DataLayer [Static File Server & Data Storage]
+        O[Backend/data/]
+        O --> P[Diagram Metadata/Images]
+        O --> Q[FAISS Indices]
+        O --> R[Metadata JSON]
+        O --> S[Diagram PNGs]
+    end
+
+    D --> F
+    C --> I
+    N --> C
+    P --> M
+    S --> E
+```
+
+## 🔄 Data Flow Process
+
+### 1. **PDF Processing Pipeline**
+```
+User Upload → PDF Extraction → Text Chunking → TF-IDF Embeddings → FAISS Storage
+```
+
+### 2. **Query Processing Pipeline**
+```
+User Question → TF-IDF Embedding → FAISS Retrieval → Context + Image Matching → LLM Generation → Response
+```
+
+### 3. **Image Retrieval Pipeline**
+```
+Query → Image Embedding Similarity → Top Match Selection → Image Metadata Return → Frontend Display
+```
+
+## 📊 Component Details
+
+### **Frontend Layer (Vite + React SPA)**
+- **PDF Upload Component**: Handles file selection, drag & drop, and upload progress
+- **Chat Interface**: Real-time messaging with auto-scroll and typing indicators
+- **Image Rendering**: Displays relevant educational diagrams inline with responses
+- **State Management**: React hooks for chat history, upload status, and UI state
+
+### **Backend Layer (FastAPI Service)**
+- **PDF Ingestion & Chunking**: PyPDF2-based text extraction with configurable chunk sizes
+- **TF-IDF Embeddings**: Scikit-learn based embedding generation with namespace support
+- **Vector Store**: FAISS FlatL2 index for efficient similarity search
+- **Retrieval Engine**: Top-k chunk retrieval with similarity scoring
+- **Image Retrieval**: Separate TF-IDF namespace for image-text matching
+- **LLM Service**: OpenAI GPT-3.5-turbo integration for grounded answer generation
+
+### **Data Persistence Layer**
+```
+backend/data/
+├── images/           # Educational diagram PNG files
+├── vectors/          # FAISS vector indices (*.faiss)
+├── metadata/         # JSON metadata files
+│   ├── {topic_id}_images.json
+│   └── {topic_id}_metadata.json
+└── pdfs/            # Uploaded PDF files
+```
+
+## 🎯 Key Architectural Decisions
+
+### **1. TF-IDF over Neural Embeddings**
+- **Why**: No API dependencies, consistent performance, interpretable similarity
+- **Namespace Separation**: Separate vocabularies for text chunks vs image metadata
+- **Persistence**: Vectorizers saved for consistent embedding dimensions
+
+### **2. FAISS FlatL2 Index**
+- **Why**: Exact similarity search suitable for small-to-medium datasets
+- **Simplicity**: No complex clustering needed for educational content
+- **Performance**: Fast retrieval for real-time chat responses
+
+### **3. Separate Image Retrieval Pipeline**
+- **Dual Embedding Spaces**: Text chunks and images use different TF-IDF vectorizers
+- **Metadata-Driven**: JSON-based image catalog with keywords and descriptions
+- **Similarity Thresholding**: Configurable minimum score for image inclusion
+
+### **4. Static File Serving**
+- **Efficiency**: Direct file serving for images and PDFs
+- **Caching**: Browser caching for frequently accessed resources
+- **Scalability**: Simple file-based storage that can scale to cloud storage
 
 ## 📁 Project Structure
 
@@ -85,8 +176,8 @@ Assignment_Edulevel/
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/Saurabh9308/Assignment_Edulevel.git
-   cd Assignment_Edulevel
+   git clone https://github.com/your-username/rag-ai-tutor.git
+   cd rag-ai-tutor
    ```
 
 2. **Backend Setup**
@@ -187,6 +278,35 @@ IMAGE_SIMILARITY_THRESHOLD=0.25
 similarity = cosine_similarity(query_embedding, image_embedding)
 ```
 
+## 🔧 Technical Stack Deep Dive
+
+### **Embedding Service**
+```python
+# Dual namespace support
+text_embeddings = embedding_service.generate_embeddings(chunk_texts, namespace="chunks")
+image_embeddings = embedding_service.generate_embeddings(image_texts, namespace="images")
+```
+
+### **Vector Storage**
+```python
+# FAISS index management
+vector_store = VectorStore(topic_id)
+vector_store.create_index(embeddings, chunks)
+vector_store.save_index()  # Persists to backend/data/vectors/
+```
+
+### **Image Retrieval**
+```python
+# Multi-factor similarity scoring
+image_data = {
+    "id": "img_001",
+    "filename": "SchoolBellVibration.png",
+    "title": "School Bell Vibration",
+    "keywords": ["bell", "vibration", "sound", "waves"],
+    "description": "Diagram showing vibration patterns..."
+}
+```
+
 ## 🛠️ API Endpoints
 
 ### POST `/api/v1/upload`
@@ -278,6 +398,19 @@ npm run preview
    - Check image files exist in `data/images/` directory
    - Verify static file serving configuration
 
+## 🚀 Scalability Considerations
+
+### **Current Architecture Benefits**
+- **Stateless Services**: Easy horizontal scaling
+- **File-Based Storage**: Simple deployment and backup
+- **Modular Design**: Independent component updates
+
+### **Potential Scaling Paths**
+1. **Cloud Storage**: Migrate from local files to S3/Cloud Storage
+2. **Vector DB**: Upgrade from FAISS to Pinecone/Weaviate for larger datasets
+3. **Microservices**: Split PDF processing, embedding, and chat into separate services
+4. **Caching**: Redis for frequent queries and session management
+
 ## 📈 Future Enhancements
 
 - [ ] Support for multiple file formats (DOCX, TXT)
@@ -309,3 +442,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Note**: This is an educational project. Ensure you comply with API usage policies and copyright laws when processing PDF content.
+
+This architecture provides a robust foundation for the AI Tutor while maintaining simplicity for educational purposes and easy local development.
